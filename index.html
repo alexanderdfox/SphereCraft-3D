@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-<title>SphereCraft 3D</title>
+<title>SphereCraft 3D — Planetary</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
 body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: system-ui, -apple-system, sans-serif; }
@@ -63,7 +63,7 @@ body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font
 .craft-btn { background: #3b82f6; border: none; color: #fff; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; }
 .craft-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 #loading-screen {
-  position: absolute; inset: 0; background: #09090b; z-index: 1000;
+  position: absolute; inset: 0; background: #050510; z-index: 1000;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; color: #fff;
   transition: opacity 0.45s ease;
 }
@@ -79,7 +79,7 @@ body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font
 }
 .instruction-card {
   background: rgba(20, 20, 26, 0.92); border: 1px solid rgba(255,255,255,0.15); border-radius: 18px;
-  padding: 28px 36px; text-align: center; color: #fff; max-width: 460px; box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+  padding: 28px 36px; text-align: center; color: #fff; max-width: 480px; box-shadow: 0 20px 40px rgba(0,0,0,0.6);
 }
 .instruction-card h2 { margin-bottom: 10px; font-size: 22px; }
 .instruction-card p { color: rgba(255,255,255,0.72); font-size: 13.5px; line-height: 1.55; margin-bottom: 18px; }
@@ -99,9 +99,7 @@ body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font
   background: rgba(0,0,0,0.5); border-radius: 3px; overflow: hidden; pointer-events: none; opacity: 0;
 }
 #break-progress-fill { height: 100%; width: 0%; background: #fff; }
-#touch-controls {
-  display: none; position: absolute; inset: 0; pointer-events: none; z-index: 40;
-}
+#touch-controls { display: none; position: absolute; inset: 0; pointer-events: none; z-index: 40; }
 .touch-btn {
   position: absolute; width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.12);
   border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 18px; display: flex; align-items: center; justify-content: center;
@@ -121,15 +119,16 @@ body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font
 </head>
 <body>
 <div id="loading-screen">
-  <h1>Generating Sphere World...</h1>
+  <h1>Forming the Planet...</h1>
   <div class="progress-bar-container"><div class="progress-bar" id="progress-bar"></div></div>
-  <div style="font-size:12px;color:rgba(255,255,255,0.5)">Procedural spheres • Infinite terrain</div>
+  <div style="font-size:12px;color:rgba(255,255,255,0.5)">Spherical world • Gravity toward center</div>
 </div>
 <div id="instructions">
   <div class="instruction-card">
-    <h2>SphereCraft 3D</h2>
+    <h2>SphereCraft 3D — Planet</h2>
     <p>
-      Explore, mine &amp; build in an infinite world of spheres.<br><br>
+      Walk the curved surface of a living planet made of spheres.<br>
+      Gravity pulls to the core. The horizon falls away like Earth.<br><br>
       <b>WASD</b> move • <b>Space</b> jump • <b>Shift</b> sprint<br>
       <b>Hold Left Click</b> mine • <b>Right Click</b> place<br>
       <b>E</b> Inventory / Craft • <b>C</b> Creative Fly • <b>1-9</b> hotbar
@@ -142,7 +141,8 @@ body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font
 <div id="break-progress"><div id="break-progress-fill"></div></div>
 <div id="hud" class="ui-panel">
   <div id="fps-counter">FPS: --</div>
-  <div id="coords-display">XYZ: 0, 0, 0</div>
+  <div id="coords-display">Lat/Lon: 0°, 0°</div>
+  <div id="alt-display">Altitude: 0</div>
   <div id="mode-display">Mode: Survival</div>
   <div id="biome-display">Biome: Plains</div>
 </div>
@@ -168,11 +168,11 @@ body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 if (typeof THREE === 'undefined') {
-  document.body.innerHTML = '<div style="color:white;font-family:sans-serif;padding:40px;text-align:center;"><h1>Failed to load Three.js</h1><p>Check your internet connection.</p></div>';
-  throw new Error('THREE is not defined');
+  document.body.innerHTML = '<div style="color:white;font-family:sans-serif;padding:40px;text-align:center;"><h1>Failed to load Three.js</h1></div>';
+  throw new Error('THREE missing');
 }
 
-// ---------- NOISE ----------
+// ===================== NOISE =====================
 class SimpleNoise {
   constructor(seed = 0) {
     this.p = new Uint8Array(512);
@@ -184,7 +184,6 @@ class SimpleNoise {
       213,119,248,152,2,44,154,163,70,221,153,101,155,167,43,172,9,129,22,39,253,19,98,108,110,79,113,224,232,178,185,112,
       104,218,246,97,228,251,34,242,193,238,210,144,12,191,179,162,241,81,51,145,235,249,14,239,107,49,192,214,31,181,199,
       106,157,184,84,204,176,115,121,50,45,127,4,150,254,138,236,205,93,222,114,67,29,24,72,243,141,128,195,78,66,215,61,156,180];
-    // simple seed scramble
     let s = seed | 0;
     for (let i = 0; i < 256; i++) {
       s = (s * 1103515245 + 12345) & 0x7fffffff;
@@ -212,38 +211,49 @@ class SimpleNoise {
   }
   lerp(t, a, b) { return a + t * (b - a); }
   grad(hash, x, y, z) {
-    z = (z === undefined || z === null) ? 0 : z;
+    z = z == null ? 0 : z;
     let h = hash & 15;
     let u = h < 8 ? x : y, v = h < 4 ? y : (h === 12 || h === 14 ? x : z);
     return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
   }
 }
-const WORLD_SEED = (Date.now() % 100000) | 0;
+const WORLD_SEED = (Date.now() % 90000) | 0;
 const noiseGen = new SimpleNoise(WORLD_SEED);
 
-// ---------- BLOCKS ----------
+// ===================== PLANET CONSTANTS =====================
+// Planet radius in block units. Surface sits near this radius.
+const PLANET_R = 56;
+// How many radial "layers" of blocks around the crust
+const CRUST_DEPTH = 6;
+// Angular resolution: blocks per full circle roughly 2*PI*R
+const BLOCK_ANG = 1.0; // ~1 unit arc length per block at surface
+// Chunk angular size (in block steps along surface)
+const CHUNK_ANG = 12;
+const RENDER_CHUNKS = 3;
+
+// ===================== BLOCKS =====================
 const BLOCK_TYPES = {
   AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, WOOD: 4, LEAVES: 5, SAND: 6, WATER: 7,
   GLOWSTONE: 8, COBBLE: 9, COAL_ORE: 10, IRON_ORE: 11, GLASS: 12, SNOW: 13,
   BEDROCK: 14, PLANKS: 15, BRICK: 16
 };
 const BLOCK_CONFIG = {
-  [BLOCK_TYPES.GRASS]:     { name: "Grass",     color: 0x55aa33, roughness: 0.9, hardness: 0.6 },
-  [BLOCK_TYPES.DIRT]:      { name: "Dirt",      color: 0x8b5a2b, roughness: 1.0, hardness: 0.5 },
+  [BLOCK_TYPES.GRASS]:     { name: "Grass",     color: 0x55aa33, roughness: 0.9, hardness: 0.55 },
+  [BLOCK_TYPES.DIRT]:      { name: "Dirt",      color: 0x8b5a2b, roughness: 1.0, hardness: 0.45 },
   [BLOCK_TYPES.STONE]:     { name: "Stone",     color: 0x7f8c8d, roughness: 0.55, hardness: 1.5 },
   [BLOCK_TYPES.WOOD]:      { name: "Wood",      color: 0x6e4726, roughness: 0.85, hardness: 1.0 },
-  [BLOCK_TYPES.LEAVES]:    { name: "Leaves",    color: 0x2e7d32, roughness: 0.9, hardness: 0.2, transparent: true, opacity: 0.82 },
-  [BLOCK_TYPES.SAND]:      { name: "Sand",      color: 0xd2b48c, roughness: 0.95, hardness: 0.4 },
-  [BLOCK_TYPES.WATER]:     { name: "Water",     color: 0x3388ff, roughness: 0.08, hardness: 0, transparent: true, opacity: 0.55, liquid: true },
+  [BLOCK_TYPES.LEAVES]:    { name: "Leaves",    color: 0x2e7d32, roughness: 0.9, hardness: 0.2, transparent: true, opacity: 0.8 },
+  [BLOCK_TYPES.SAND]:      { name: "Sand",      color: 0xd2b48c, roughness: 0.95, hardness: 0.35 },
+  [BLOCK_TYPES.WATER]:     { name: "Water",     color: 0x3388ff, roughness: 0.08, hardness: 0, transparent: true, opacity: 0.5, liquid: true },
   [BLOCK_TYPES.GLOWSTONE]: { name: "Glowstone", color: 0xffd700, roughness: 0.25, hardness: 0.4, emissive: 0xffaa00, emissiveIntensity: 1.1 },
-  [BLOCK_TYPES.COBBLE]:    { name: "Cobble",    color: 0x5a5a5a, roughness: 0.9, hardness: 1.6 },
+  [BLOCK_TYPES.COBBLE]:    { name: "Cobble",    color: 0x5a5a5a, roughness: 0.9, hardness: 1.55 },
   [BLOCK_TYPES.COAL_ORE]:  { name: "Coal Ore",  color: 0x2c2c2c, roughness: 0.7, hardness: 2.0 },
-  [BLOCK_TYPES.IRON_ORE]:  { name: "Iron Ore",  color: 0x8b7355, roughness: 0.6, hardness: 2.4 },
-  [BLOCK_TYPES.GLASS]:     { name: "Glass",     color: 0xaaddff, roughness: 0.05, hardness: 0.3, transparent: true, opacity: 0.35 },
-  [BLOCK_TYPES.SNOW]:      { name: "Snow",      color: 0xf0f5ff, roughness: 0.95, hardness: 0.25 },
+  [BLOCK_TYPES.IRON_ORE]:  { name: "Iron Ore",  color: 0x8b7355, roughness: 0.6, hardness: 2.3 },
+  [BLOCK_TYPES.GLASS]:     { name: "Glass",     color: 0xaaddff, roughness: 0.05, hardness: 0.3, transparent: true, opacity: 0.32 },
+  [BLOCK_TYPES.SNOW]:      { name: "Snow",      color: 0xf0f5ff, roughness: 0.95, hardness: 0.22 },
   [BLOCK_TYPES.BEDROCK]:   { name: "Bedrock",   color: 0x1a1a1a, roughness: 0.8, hardness: 999 },
-  [BLOCK_TYPES.PLANKS]:    { name: "Planks",    color: 0xc4a35a, roughness: 0.8, hardness: 0.9 },
-  [BLOCK_TYPES.BRICK]:     { name: "Brick",     color: 0xb55239, roughness: 0.7, hardness: 1.8 }
+  [BLOCK_TYPES.PLANKS]:    { name: "Planks",    color: 0xc4a35a, roughness: 0.8, hardness: 0.85 },
+  [BLOCK_TYPES.BRICK]:     { name: "Brick",     color: 0xb55239, roughness: 0.7, hardness: 1.7 }
 };
 const HOTBAR_ITEMS = [
   BLOCK_TYPES.GRASS, BLOCK_TYPES.DIRT, BLOCK_TYPES.STONE, BLOCK_TYPES.WOOD,
@@ -257,14 +267,94 @@ const CRAFT_RECIPES = [
   { out: BLOCK_TYPES.GLOWSTONE, count: 1, need: { [BLOCK_TYPES.COAL_ORE]: 1, [BLOCK_TYPES.SAND]: 1 }, label: "Coal + Sand → Glowstone" }
 ];
 
-// ---------- SCENE ----------
+// ===================== SPHERICAL MATH =====================
+// Convert unit direction + radial height index to world position
+// radialIndex: 0 = deepest crust, higher = outward
+function radialToWorld(dir, radialIndex) {
+  const r = PLANET_R - CRUST_DEPTH + radialIndex + 0.5;
+  return dir.clone().multiplyScalar(r);
+}
+
+// Lat/lon from direction (degrees)
+function dirToLatLon(dir) {
+  const lat = Math.asin(Math.max(-1, Math.min(1, dir.y))) * 180 / Math.PI;
+  const lon = Math.atan2(dir.x, dir.z) * 180 / Math.PI;
+  return { lat, lon };
+}
+
+// Biome from direction on sphere
+function getBiome(dir) {
+  // temperature ~ latitude + noise
+  const lat = Math.asin(Math.max(-1, Math.min(1, dir.y)));
+  const n = noiseGen.noise3D(dir.x * 3.2, dir.y * 3.2, dir.z * 3.2);
+  const temp = Math.cos(lat) + n * 0.35;
+  if (Math.abs(lat) > 1.15 || temp < 0.15) return 'snow';
+  if (temp > 0.95 && Math.abs(lat) < 0.6) return 'desert';
+  return 'plains';
+}
+
+// Surface height offset (-3 .. +5) in radial units from noise on sphere
+function surfaceHeightOffset(dir) {
+  const n1 = noiseGen.noise3D(dir.x * 2.4, dir.y * 2.4, dir.z * 2.4);
+  const n2 = noiseGen.noise3D(dir.x * 6.0, dir.y * 6.0, dir.z * 6.0);
+  return Math.round(n1 * 3.2 + n2 * 1.4);
+}
+
+// Cube-sphere face indexing for chunks
+// We use 6 faces of a cube projected to the sphere.
+// Face: 0=+X 1=-X 2=+Y 3=-Y 4=+Z 5=-Z
+// u,v in [-1,1] on face, then normalize to sphere.
+function faceUVToDir(face, u, v) {
+  let x, y, z;
+  switch (face) {
+    case 0: x =  1; y = v; z = -u; break;
+    case 1: x = -1; y = v; z =  u; break;
+    case 2: x =  u; y =  1; z = -v; break;
+    case 3: x =  u; y = -1; z =  v; break;
+    case 4: x =  u; y = v; z =  1; break;
+    case 5: x = -u; y = v; z = -1; break;
+  }
+  const len = Math.sqrt(x*x + y*y + z*z);
+  return new THREE.Vector3(x/len, y/len, z/len);
+}
+
+// How many steps per face edge (resolution)
+const FACE_RES = Math.max(24, Math.round(2 * Math.PI * PLANET_R / (6 * BLOCK_ANG))); // ~blocks per face edge
+function chunkKey(face, cu, cv) { return `${face},${cu},${cv}`; }
+
+function getChunkCoordsFromDir(dir) {
+  // Find dominant axis → face
+  const ax = Math.abs(dir.x), ay = Math.abs(dir.y), az = Math.abs(dir.z);
+  let face, u, v;
+  if (ax >= ay && ax >= az) {
+    face = dir.x > 0 ? 0 : 1;
+    u = face === 0 ? -dir.z / ax : dir.z / ax;
+    v = dir.y / ax;
+  } else if (ay >= az) {
+    face = dir.y > 0 ? 2 : 3;
+    u = dir.x / ay;
+    v = face === 2 ? -dir.z / ay : dir.z / ay;
+  } else {
+    face = dir.z > 0 ? 4 : 5;
+    u = face === 4 ? dir.x / az : -dir.x / az;
+    v = dir.y / az;
+  }
+  // u,v in [-1,1] → grid
+  const gu = Math.floor((u + 1) * 0.5 * FACE_RES);
+  const gv = Math.floor((v + 1) * 0.5 * FACE_RES);
+  const cu = Math.floor(gu / CHUNK_ANG);
+  const cv = Math.floor(gv / CHUNK_ANG);
+  return { face, cu, cv, gu, gv, u, v };
+}
+
+// ===================== SCENE =====================
 const container = document.getElementById('canvas-container');
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xcce0ff);
-scene.fog = new THREE.FogExp2(0xcce0ff, 0.011);
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 30, 0);
-const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+scene.background = new THREE.Color(0x020208);
+scene.fog = new THREE.FogExp2(0x020208, 0.0045);
+
+const camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.15, 500);
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
@@ -272,218 +362,343 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputEncoding = THREE.sRGBEncoding;
 container.appendChild(renderer.domElement);
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.38);
+// Space-like ambient + sun
+const ambientLight = new THREE.AmbientLight(0x334466, 0.35);
 scene.add(ambientLight);
-const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.28);
-hemiLight.position.set(0, 200, 0);
+const hemiLight = new THREE.HemisphereLight(0x88aaff, 0x221100, 0.25);
 scene.add(hemiLight);
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
-dirLight.position.set(100, 150, 50);
-dirLight.castShadow = true;
-dirLight.shadow.camera.top = 90; dirLight.shadow.camera.bottom = -90;
-dirLight.shadow.camera.left = -90; dirLight.shadow.camera.right = 90;
-dirLight.shadow.camera.near = 0.5; dirLight.shadow.camera.far = 420;
-dirLight.shadow.mapSize.set(2048, 2048);
-scene.add(dirLight);
+const sun = new THREE.DirectionalLight(0xfff5e0, 1.15);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.near = 10;
+sun.shadow.camera.far = 400;
+sun.shadow.camera.left = sun.shadow.camera.bottom = -120;
+sun.shadow.camera.right = sun.shadow.camera.top = 120;
+scene.add(sun);
 
-let timeOfDay = 0.28;
-function updateLighting(delta) {
-  timeOfDay = (timeOfDay + delta * 0.012) % 1;
+// Stars (simple points)
+(function makeStars() {
+  const N = 1200;
+  const pos = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) {
+    const r = 280 + Math.random() * 120;
+    const th = Math.random() * Math.PI * 2;
+    const ph = Math.acos(2 * Math.random() - 1);
+    pos[i*3] = r * Math.sin(ph) * Math.cos(th);
+    pos[i*3+1] = r * Math.sin(ph) * Math.sin(th);
+    pos[i*3+2] = r * Math.cos(ph);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const mat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.6, sizeAttenuation: true });
+  scene.add(new THREE.Points(geo, mat));
+})();
+
+let timeOfDay = 0.2;
+function updateLighting(delta, playerPos) {
+  timeOfDay = (timeOfDay + delta * 0.008) % 1;
   const angle = timeOfDay * Math.PI * 2;
-  const sunY = Math.sin(angle);
-  dirLight.position.set(Math.cos(angle) * 220, sunY * 180, 40);
-  const intensity = Math.max(0, sunY);
-  dirLight.intensity = intensity * 1.25;
-  ambientLight.intensity = 0.18 + intensity * 0.38;
-  hemiLight.intensity = 0.1 + intensity * 0.28;
-  let sky = new THREE.Color();
-  if (intensity > 0.28) sky.setHex(0xcce0ff);
-  else if (intensity > 0.02) sky.setHex(0xd97706);
-  else sky.setHex(0x07070c);
-  scene.background.lerp(sky, 0.06);
+  // Sun orbits relative to planet
+  const sunDir = new THREE.Vector3(Math.cos(angle), Math.sin(angle) * 0.35, Math.sin(angle));
+  sunDir.normalize();
+  sun.position.copy(sunDir).multiplyScalar(200);
+  // Dim when sun is "behind" relative to player hemisphere
+  const up = playerPos.clone().normalize();
+  const dayFactor = Math.max(0.05, sunDir.dot(up) * 0.5 + 0.5);
+  sun.intensity = 0.25 + dayFactor * 1.0;
+  ambientLight.intensity = 0.12 + dayFactor * 0.3;
+  // Sky color: black space with slight blue on day side
+  const sky = new THREE.Color().setHSL(0.6, 0.4, 0.02 + dayFactor * 0.08);
+  scene.background.lerp(sky, 0.05);
   scene.fog.color.copy(scene.background);
 }
 
-// ---------- WORLD ----------
-const CHUNK_SIZE = 16;
-const RENDER_DISTANCE = 4;
-const sphereRadius = 0.5;
-const modifiedSpheres = JSON.parse(localStorage.getItem('sphereCraft_world_v2') || '{}');
-
-const sphereGeo = new THREE.SphereGeometry(sphereRadius * 0.94, 9, 9);
+// ===================== MATERIALS & GEOMETRY =====================
+const sphereGeo = new THREE.SphereGeometry(0.48, 8, 8);
 const materials = {};
 function initMaterials() {
   for (const id in BLOCK_CONFIG) {
-    const conf = BLOCK_CONFIG[id];
+    const c = BLOCK_CONFIG[id];
     materials[id] = new THREE.MeshStandardMaterial({
-      color: conf.color, roughness: conf.roughness,
-      transparent: !!conf.transparent, opacity: conf.opacity || 1,
-      emissive: conf.emissive || 0x000000, emissiveIntensity: conf.emissiveIntensity || 0
+      color: c.color, roughness: c.roughness,
+      transparent: !!c.transparent, opacity: c.opacity || 1,
+      emissive: c.emissive || 0, emissiveIntensity: c.emissiveIntensity || 0
     });
   }
 }
 initMaterials();
 
-function getChunkKey(cx, cz) { return `${cx},${cz}`; }
+// ===================== WORLD DATA =====================
+// modified blocks: key "face,gu,gv,radial" → type
+const modified = JSON.parse(localStorage.getItem('sphereCraft_planet_v1') || '{}');
+const activeChunks = new Map(); // key → { group, data Map, face, cu, cv }
 
-function getBiome(wx, wz) {
-  const t = noiseGen.noise2D(wx * 0.008, wz * 0.008);
-  if (t < -0.35) return 'desert';
-  if (t > 0.4) return 'snow';
-  return 'plains';
+function blockKey(face, gu, gv, radial) {
+  return `${face},${gu},${gv},${radial}`;
 }
 
-function generateChunkData(cx, cz) {
-  const chunk = new Map();
-  const startX = cx * CHUNK_SIZE, startZ = cz * CHUNK_SIZE;
-  const endX = startX + CHUNK_SIZE, endZ = startZ + CHUNK_SIZE;
+function generateChunkData(face, cu, cv) {
+  const data = new Map(); // key face,gu,gv,radial → type
+  const u0 = cu * CHUNK_ANG;
+  const v0 = cv * CHUNK_ANG;
 
-  for (let x = 0; x < CHUNK_SIZE; x++) {
-    for (let z = 0; z < CHUNK_SIZE; z++) {
-      const worldX = startX + x, worldZ = startZ + z;
-      const biome = getBiome(worldX, worldZ);
-      let heightNoise = noiseGen.noise2D(worldX * 0.03, worldZ * 0.03) * 11 +
-                        noiseGen.noise2D(worldX * 0.09, worldZ * 0.09) * 3.2;
-      if (biome === 'desert') heightNoise *= 0.7;
-      if (biome === 'snow') heightNoise += 2;
-      const surfaceHeight = Math.max(2, Math.min(42, Math.floor(14 + (isNaN(heightNoise) ? 0 : heightNoise))));
+  for (let iu = 0; iu < CHUNK_ANG; iu++) {
+    for (let iv = 0; iv < CHUNK_ANG; iv++) {
+      const gu = u0 + iu;
+      const gv = v0 + iv;
+      if (gu < 0 || gv < 0 || gu >= FACE_RES || gv >= FACE_RES) continue;
 
-      for (let y = 0; y <= surfaceHeight + 1; y++) {
+      const u = (gu + 0.5) / FACE_RES * 2 - 1;
+      const v = (gv + 0.5) / FACE_RES * 2 - 1;
+      const dir = faceUVToDir(face, u, v);
+      const biome = getBiome(dir);
+      const hOff = surfaceHeightOffset(dir);
+      // surface radial index (0..CRUST_DEPTH+max height)
+      const surfaceR = CRUST_DEPTH + hOff;
+
+      for (let r = 0; r <= surfaceR + 1; r++) {
         let type = BLOCK_TYPES.STONE;
-        if (y === 0) type = BLOCK_TYPES.BEDROCK;
-        else if (y === surfaceHeight) {
+        if (r === 0) type = BLOCK_TYPES.BEDROCK;
+        else if (r === surfaceR) {
           if (biome === 'desert') type = BLOCK_TYPES.SAND;
           else if (biome === 'snow') type = BLOCK_TYPES.SNOW;
-          else type = surfaceHeight < 12 ? BLOCK_TYPES.SAND : BLOCK_TYPES.GRASS;
-        } else if (y >= surfaceHeight - 3 && y < surfaceHeight) {
+          else type = BLOCK_TYPES.GRASS;
+        } else if (r >= surfaceR - 2 && r < surfaceR) {
           type = biome === 'desert' ? BLOCK_TYPES.SAND : BLOCK_TYPES.DIRT;
-        } else if (y < surfaceHeight - 3) {
-          // ores
-          const oreN = noiseGen.noise3D(worldX * 0.14, y * 0.14, worldZ * 0.14);
-          if (oreN > 0.62 && y < 18) type = BLOCK_TYPES.COAL_ORE;
-          else if (oreN < -0.58 && y < 14) type = BLOCK_TYPES.IRON_ORE;
+        } else if (r < surfaceR - 2) {
+          const oreN = noiseGen.noise3D(dir.x * 8 + r * 0.3, dir.y * 8, dir.z * 8);
+          if (oreN > 0.55) type = BLOCK_TYPES.COAL_ORE;
+          else if (oreN < -0.55) type = BLOCK_TYPES.IRON_ORE;
         }
-        const cave = noiseGen.noise3D(worldX * 0.09, y * 0.09, worldZ * 0.09);
-        if (y > 1 && y < surfaceHeight - 2 && cave > 0.48) continue;
-        chunk.set(`${worldX},${y},${worldZ}`, type);
+
+        // shallow caves
+        if (r > 1 && r < surfaceR - 1) {
+          const cave = noiseGen.noise3D(dir.x * 5 + r * 0.4, dir.y * 5, dir.z * 5);
+          if (cave > 0.55) continue;
+        }
+
+        // water in low areas near equator-ish
+        if (r > surfaceR && r <= CRUST_DEPTH + 1 && hOff < -1 && biome !== 'snow') {
+          type = BLOCK_TYPES.WATER;
+        }
+
+        const bk = blockKey(face, gu, gv, r);
+        if (modified[bk] !== undefined) {
+          if (modified[bk] === BLOCK_TYPES.AIR) continue;
+          type = modified[bk];
+        }
+        data.set(bk, type);
       }
 
-      // water
-      for (let y = surfaceHeight + 1; y <= 12; y++) {
-        if (!chunk.has(`${worldX},${y},${worldZ}`)) chunk.set(`${worldX},${y},${worldZ}`, BLOCK_TYPES.WATER);
-      }
-
-      // trees (plains only)
-      if (biome === 'plains' && surfaceHeight >= 13 && noiseGen.noise2D(worldX * 0.48, worldZ * 0.48) > 0.86) {
-        const treeHeight = 4 + Math.floor(Math.random() * 3);
-        for (let ty = 1; ty <= treeHeight; ty++) {
-          chunk.set(`${worldX},${surfaceHeight + ty},${worldZ}`, BLOCK_TYPES.WOOD);
+      // trees
+      if (biome === 'plains' && hOff >= 0 && noiseGen.noise3D(dir.x * 12, dir.y * 12, dir.z * 12) > 0.72) {
+        const th = 3 + (Math.abs(Math.floor(dir.x * 100)) % 3);
+        for (let t = 1; t <= th; t++) {
+          const bk = blockKey(face, gu, gv, surfaceR + t);
+          if (modified[bk] === undefined) data.set(bk, BLOCK_TYPES.WOOD);
         }
-        for (let lx = -2; lx <= 2; lx++) {
-          for (let ly = -1; ly <= 2; ly++) {
-            for (let lz = -2; lz <= 2; lz++) {
-              if (Math.abs(lx) + Math.abs(ly) + Math.abs(lz) > 3.2) continue;
-              const leafX = worldX + lx, leafY = surfaceHeight + treeHeight + ly, leafZ = worldZ + lz;
-              if (leafX >= startX && leafX < endX && leafZ >= startZ && leafZ < endZ) {
-                const leafKey = `${leafX},${leafY},${leafZ}`;
-                if (!chunk.has(leafKey)) chunk.set(leafKey, BLOCK_TYPES.LEAVES);
-              }
-            }
-          }
+        // simple leaf blob (same column only — keeps chunks independent)
+        for (let t = th - 1; t <= th + 1; t++) {
+          const bk = blockKey(face, gu, gv, surfaceR + t);
+          if (!data.has(bk) && modified[bk] === undefined) data.set(bk, BLOCK_TYPES.LEAVES);
         }
       }
     }
   }
-
-  const cKey = getChunkKey(cx, cz);
-  if (modifiedSpheres[cKey]) {
-    for (const pos in modifiedSpheres[cKey]) {
-      const type = modifiedSpheres[cKey][pos];
-      if (type === BLOCK_TYPES.AIR) chunk.delete(pos);
-      else chunk.set(pos, type);
-    }
-  }
-  return chunk;
+  return data;
 }
 
-const activeChunks = new Map();
-
-function updateChunksAroundPlayer(playerX, playerZ) {
-  const pChunkX = Math.floor(playerX / CHUNK_SIZE);
-  const pChunkZ = Math.floor(playerZ / CHUNK_SIZE);
-  const needed = new Set();
-  for (let x = -RENDER_DISTANCE; x <= RENDER_DISTANCE; x++) {
-    for (let z = -RENDER_DISTANCE; z <= RENDER_DISTANCE; z++) {
-      needed.add(getChunkKey(pChunkX + x, pChunkZ + z));
-    }
-  }
-  for (const [cKey, chunkObj] of activeChunks) {
-    if (!needed.has(cKey)) {
-      scene.remove(chunkObj.group);
-      chunkObj.group = null;
-      activeChunks.delete(cKey);
-    }
-  }
-  needed.forEach(cKey => {
-    if (!activeChunks.has(cKey)) {
-      const [cx, cz] = cKey.split(',').map(Number);
-      const data = generateChunkData(cx, cz);
-      const group = buildChunkMesh(data);
-      scene.add(group);
-      activeChunks.set(cKey, { group, data, cx, cz });
-    }
-  });
-}
-
-function buildChunkMesh(chunkData) {
+function buildChunkMesh(data) {
   const group = new THREE.Group();
-  const typeGroups = {};
-  chunkData.forEach((type, posStr) => {
-    if (!typeGroups[type]) typeGroups[type] = [];
-    const [x, y, z] = posStr.split(',').map(Number);
-    typeGroups[type].push(new THREE.Vector3(x, y, z));
+  const byType = {};
+  data.forEach((type, key) => {
+    if (!byType[type]) byType[type] = [];
+    const parts = key.split(',').map(Number);
+    const face = parts[0], gu = parts[1], gv = parts[2], radial = parts[3];
+    const u = (gu + 0.5) / FACE_RES * 2 - 1;
+    const v = (gv + 0.5) / FACE_RES * 2 - 1;
+    const dir = faceUVToDir(face, u, v);
+    const pos = radialToWorld(dir, radial);
+    byType[type].push(pos);
   });
   const dummy = new THREE.Object3D();
-  for (const type in typeGroups) {
-    const positions = typeGroups[type];
-    const count = positions.length;
-    if (!count) continue;
+  for (const type in byType) {
+    const positions = byType[type];
     const mat = materials[type];
-    if (!mat) continue;
-    const mesh = new THREE.InstancedMesh(sphereGeo, mat, count);
+    if (!mat || !positions.length) continue;
+    const mesh = new THREE.InstancedMesh(sphereGeo, mat, positions.length);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     mesh.userData.blockType = parseInt(type, 10);
-    for (let i = 0; i < count; i++) {
-      dummy.position.copy(positions[i]);
+    // store keys for picking
+    mesh.userData.keys = [];
+    let i = 0;
+    data.forEach((t, key) => {
+      if (String(t) !== String(type)) return;
+      const parts = key.split(',').map(Number);
+      const face = parts[0], gu = parts[1], gv = parts[2], radial = parts[3];
+      const u = (gu + 0.5) / FACE_RES * 2 - 1;
+      const v = (gv + 0.5) / FACE_RES * 2 - 1;
+      const dir = faceUVToDir(face, u, v);
+      dummy.position.copy(radialToWorld(dir, radial));
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
-    }
+      mesh.userData.keys[i] = key;
+      i++;
+    });
     mesh.instanceMatrix.needsUpdate = true;
     group.add(mesh);
   }
   return group;
 }
 
-// ---------- PLAYER ----------
+function updateChunksAroundPlayer(playerPos) {
+  const dir = playerPos.clone().normalize();
+  const { face, cu, cv } = getChunkCoordsFromDir(dir);
+  const needed = new Set();
+  for (let du = -RENDER_CHUNKS; du <= RENDER_CHUNKS; du++) {
+    for (let dv = -RENDER_CHUNKS; dv <= RENDER_CHUNKS; dv++) {
+      // stay on same face for simplicity (edges will have gaps at face seams — acceptable for demo)
+      const ncu = cu + du, ncv = cv + dv;
+      if (ncu < 0 || ncv < 0) continue;
+      const maxC = Math.ceil(FACE_RES / CHUNK_ANG);
+      if (ncu >= maxC || ncv >= maxC) continue;
+      needed.add(chunkKey(face, ncu, ncv));
+    }
+  }
+  // also load neighboring faces near borders
+  for (let f = 0; f < 6; f++) {
+    if (f === face) continue;
+    // load center-ish of nearby faces when player near edge — simplified: load face center chunks if angular close
+    const testDir = faceUVToDir(f, 0, 0);
+    if (testDir.dot(dir) > 0.35) {
+      const mid = Math.floor(FACE_RES / CHUNK_ANG / 2);
+      for (let du = -1; du <= 1; du++) {
+        for (let dv = -1; dv <= 1; dv++) {
+          needed.add(chunkKey(f, mid + du, mid + dv));
+        }
+      }
+    }
+  }
+
+  for (const [k, obj] of activeChunks) {
+    if (!needed.has(k)) {
+      scene.remove(obj.group);
+      activeChunks.delete(k);
+    }
+  }
+  needed.forEach(k => {
+    if (activeChunks.has(k)) return;
+    const [f, ccu, ccv] = k.split(',').map(Number);
+    const data = generateChunkData(f, ccu, ccv);
+    const group = buildChunkMesh(data);
+    scene.add(group);
+    activeChunks.set(k, { group, data, face: f, cu: ccu, cv: ccv });
+  });
+}
+
+// Lookup block at world position (approximate via direction + radius)
+function worldToBlockKey(pos) {
+  const r = pos.length();
+  if (r < 1) return null;
+  const dir = pos.clone().normalize();
+  const { face, gu, gv } = getChunkCoordsFromDir(dir);
+  // radial index from radius
+  const radial = Math.round(r - (PLANET_R - CRUST_DEPTH) - 0.5);
+  if (radial < 0 || radial > CRUST_DEPTH + 12) return null;
+  return blockKey(face, gu, gv, radial);
+}
+
+function getBlockAtWorld(pos) {
+  const key = worldToBlockKey(pos);
+  if (!key) return BLOCK_TYPES.AIR;
+  // search active chunks
+  for (const obj of activeChunks.values()) {
+    if (obj.data.has(key)) return obj.data.get(key);
+  }
+  if (modified[key] !== undefined) return modified[key];
+  return BLOCK_TYPES.AIR;
+}
+
+function setBlockAtKey(key, type) {
+  if (!key) return;
+  const parts = key.split(',').map(Number);
+  if (parts[3] === 0 && type === BLOCK_TYPES.AIR) return; // bedrock
+
+  modified[key] = type;
+  try { localStorage.setItem('sphereCraft_planet_v1', JSON.stringify(modified)); } catch (e) {}
+
+  // find and rebuild owning chunk
+  const face = parts[0], gu = parts[1], gv = parts[2];
+  const cu = Math.floor(gu / CHUNK_ANG), cv = Math.floor(gv / CHUNK_ANG);
+  const ck = chunkKey(face, cu, cv);
+  let obj = activeChunks.get(ck);
+  if (!obj) {
+    // force load
+    const data = generateChunkData(face, cu, cv);
+    const group = buildChunkMesh(data);
+    scene.add(group);
+    obj = { group, data, face, cu, cv };
+    activeChunks.set(ck, obj);
+  }
+  if (type === BLOCK_TYPES.AIR) obj.data.delete(key);
+  else obj.data.set(key, type);
+
+  scene.remove(obj.group);
+  obj.group = buildChunkMesh(obj.data);
+  scene.add(obj.group);
+}
+
+function isSolidType(t) {
+  if (t === BLOCK_TYPES.AIR) return false;
+  const c = BLOCK_CONFIG[t];
+  return !(c && c.liquid);
+}
+
+// ===================== PLAYER =====================
 const player = {
-  position: new THREE.Vector3(0, 45, 0),
-  velocity: new THREE.Vector3(0, 0, 0),
-  radius: 0.32,
-  height: 1.55,
-  speed: 6.2,
-  jumpForce: 8.8,
+  position: new THREE.Vector3(0, PLANET_R + 8, 0),
+  velocity: new THREE.Vector3(0, 0, 0), // world space
+  speed: 7.0,
+  jumpForce: 9.5,
   isGrounded: false,
   flying: false,
   health: 20,
   maxHealth: 20,
   inWater: false
 };
-const input = { forward: false, backward: false, left: false, right: false, jump: false, sprint: false };
-let euler = new THREE.Euler(0, 0, 0, 'YXZ');
+
+// Orientation: we keep a "local up" = radial outward, and yaw around it
+let yaw = 0;   // rotation around local up
+let pitch = 0; // look up/down relative to horizon
+const input = { forward: false, backward: false, left: false, right: false, sprint: false };
 let controlsEnabled = false;
 
-window.addEventListener('keydown', (e) => {
+function getLocalBasis(pos) {
+  const up = pos.clone().normalize();
+  // reference forward in world (prefer -Z projected)
+  let ref = new THREE.Vector3(0, 0, -1);
+  if (Math.abs(up.dot(ref)) > 0.95) ref.set(-1, 0, 0);
+  const right = new THREE.Vector3().crossVectors(ref, up).normalize();
+  const forward = new THREE.Vector3().crossVectors(up, right).normalize();
+  return { up, right, forward };
+}
+
+function applyLook() {
+  const { up, right, forward } = getLocalBasis(player.position);
+  // yaw rotates forward/right around up
+  const cos = Math.cos(yaw), sin = Math.sin(yaw);
+  const lookFwd = forward.clone().multiplyScalar(cos).add(right.clone().multiplyScalar(sin));
+  const lookRight = right.clone().multiplyScalar(cos).sub(forward.clone().multiplyScalar(sin));
+  // pitch
+  const lookDir = lookFwd.clone().multiplyScalar(Math.cos(pitch)).add(up.clone().multiplyScalar(Math.sin(pitch)));
+  const camPos = player.position.clone().add(up.clone().multiplyScalar(1.55));
+  camera.position.copy(camPos);
+  camera.up.copy(up);
+  camera.lookAt(camPos.clone().add(lookDir));
+}
+
+window.addEventListener('keydown', e => {
   if (!controlsEnabled && e.code !== 'KeyE') return;
   switch (e.code) {
     case 'KeyW': input.forward = true; break;
@@ -491,15 +706,20 @@ window.addEventListener('keydown', (e) => {
     case 'KeyA': input.left = true; break;
     case 'KeyD': input.right = true; break;
     case 'Space':
-      if (player.flying) player.velocity.y = player.speed;
-      else if (player.isGrounded || player.inWater) {
-        player.velocity.y = player.jumpForce * (player.inWater ? 0.55 : 1);
+      if (player.flying) {
+        const up = player.position.clone().normalize();
+        player.velocity.addScaledVector(up, player.speed);
+      } else if (player.isGrounded || player.inWater) {
+        const up = player.position.clone().normalize();
+        player.velocity.addScaledVector(up, player.jumpForce * (player.inWater ? 0.5 : 1));
         player.isGrounded = false;
       }
       break;
     case 'ShiftLeft':
-      if (player.flying) player.velocity.y = -player.speed;
-      else input.sprint = true;
+      if (player.flying) {
+        const up = player.position.clone().normalize();
+        player.velocity.addScaledVector(up, -player.speed);
+      } else input.sprint = true;
       break;
     case 'KeyC':
       player.flying = !player.flying;
@@ -512,7 +732,7 @@ window.addEventListener('keydown', (e) => {
       selectHotbarSlot(parseInt(e.key, 10) - 1); break;
   }
 });
-window.addEventListener('keyup', (e) => {
+window.addEventListener('keyup', e => {
   switch (e.code) {
     case 'KeyW': input.forward = false; break;
     case 'KeyS': input.backward = false; break;
@@ -522,114 +742,56 @@ window.addEventListener('keyup', (e) => {
   }
 });
 
-const startBtn = document.getElementById('start-btn');
-const instructions = document.getElementById('instructions');
-startBtn.addEventListener('click', () => document.body.requestPointerLock());
+document.getElementById('start-btn').addEventListener('click', () => document.body.requestPointerLock());
 document.addEventListener('pointerlockchange', () => {
   controlsEnabled = document.pointerLockElement === document.body;
-  instructions.style.display = controlsEnabled ? 'none' : 'flex';
+  document.getElementById('instructions').style.display = controlsEnabled ? 'none' : 'flex';
 });
-document.addEventListener('mousemove', (e) => {
+document.addEventListener('mousemove', e => {
   if (!controlsEnabled) return;
-  euler.y -= (e.movementX || 0) * 0.0022;
-  euler.x -= (e.movementY || 0) * 0.0022;
-  euler.x = Math.max(-Math.PI / 2.05, Math.min(Math.PI / 2.05, euler.x));
-  camera.quaternion.setFromEuler(euler);
+  yaw += (e.movementX || 0) * 0.0022;
+  pitch -= (e.movementY || 0) * 0.0022;
+  pitch = Math.max(-1.4, Math.min(1.4, pitch));
 });
 
-function isSolid(type) {
-  if (type === BLOCK_TYPES.AIR) return false;
-  const conf = BLOCK_CONFIG[type];
-  return !(conf && conf.liquid);
-}
-
-function getBlockAt(x, y, z) {
-  const cx = Math.floor(x / CHUNK_SIZE), cz = Math.floor(z / CHUNK_SIZE);
-  const chunk = activeChunks.get(getChunkKey(cx, cz));
-  if (!chunk) return BLOCK_TYPES.AIR;
-  return chunk.data.get(`${Math.floor(x)},${Math.floor(y)},${Math.floor(z)}`) || BLOCK_TYPES.AIR;
-}
-
-function setBlockAt(x, y, z, type) {
-  const bx = Math.floor(x), by = Math.floor(y), bz = Math.floor(z);
-  if (by < 0) return;
-  const cx = Math.floor(bx / CHUNK_SIZE), cz = Math.floor(bz / CHUNK_SIZE);
-  const cKey = getChunkKey(cx, cz);
-  const chunk = activeChunks.get(cKey);
-  if (!chunk) return;
-  const posStr = `${bx},${by},${bz}`;
-  const oldType = chunk.data.get(posStr) || BLOCK_TYPES.AIR;
-  if (oldType === BLOCK_TYPES.BEDROCK && type === BLOCK_TYPES.AIR) return;
-
-  if (type === BLOCK_TYPES.AIR) {
-    chunk.data.delete(posStr);
-    if (oldType !== BLOCK_TYPES.AIR && !player.flying) {
-      // drop as cobble when mining stone
-      let give = oldType;
-      if (oldType === BLOCK_TYPES.STONE) give = BLOCK_TYPES.COBBLE;
-      inventory[give] = (inventory[give] || 0) + 1;
-      updateHotbarCounts();
-      updateInventoryUI();
-    }
-    spawnParticles(bx, by, bz, oldType);
-  } else {
-    chunk.data.set(posStr, type);
-    spawnParticles(bx, by, bz, type, true);
-  }
-
-  if (!modifiedSpheres[cKey]) modifiedSpheres[cKey] = {};
-  modifiedSpheres[cKey][posStr] = type;
-  try { localStorage.setItem('sphereCraft_world_v2', JSON.stringify(modifiedSpheres)); } catch (e) {}
-
-  scene.remove(chunk.group);
-  chunk.group = buildChunkMesh(chunk.data);
-  scene.add(chunk.group);
-}
-
-// ---------- PARTICLES ----------
+// ===================== PARTICLES =====================
 const particleGroup = new THREE.Group();
 scene.add(particleGroup);
-const particleGeo = new THREE.SphereGeometry(0.08, 4, 4);
-let activeParticles = [];
-
-function spawnParticles(x, y, z, blockType, place = false) {
+const pGeo = new THREE.SphereGeometry(0.07, 4, 4);
+let particles = [];
+function spawnParticles(pos, blockType, place) {
   const conf = BLOCK_CONFIG[blockType];
   if (!conf) return;
-  const color = conf.color;
-  const n = place ? 4 : 10;
+  const n = place ? 4 : 9;
   for (let i = 0; i < n; i++) {
-    const mat = new THREE.MeshBasicMaterial({ color });
-    const m = new THREE.Mesh(particleGeo, mat);
-    m.position.set(x + (Math.random()-0.5)*0.6, y + (Math.random()-0.5)*0.6, z + (Math.random()-0.5)*0.6);
-    const vel = new THREE.Vector3((Math.random()-0.5)*3, Math.random()*2.5 + 0.5, (Math.random()-0.5)*3);
-    if (place) vel.multiplyScalar(0.4);
+    const m = new THREE.Mesh(pGeo, new THREE.MeshBasicMaterial({ color: conf.color }));
+    m.position.copy(pos).add(new THREE.Vector3((Math.random()-0.5)*0.5, (Math.random()-0.5)*0.5, (Math.random()-0.5)*0.5));
+    const vel = new THREE.Vector3((Math.random()-0.5)*2.5, (Math.random()-0.5)*2.5, (Math.random()-0.5)*2.5);
+    if (place) vel.multiplyScalar(0.35);
     particleGroup.add(m);
-    activeParticles.push({ mesh: m, vel, life: 0.55 + Math.random()*0.25 });
+    particles.push({ mesh: m, vel, life: 0.5 + Math.random()*0.3 });
   }
 }
-
-function updateParticles(delta) {
-  for (let i = activeParticles.length - 1; i >= 0; i--) {
-    const p = activeParticles[i];
+function updateParticles(delta, up) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
     p.life -= delta;
-    p.vel.y -= 9 * delta;
+    // gravity toward center
+    p.vel.addScaledVector(up, -12 * delta);
     p.mesh.position.addScaledVector(p.vel, delta);
-    p.mesh.scale.multiplyScalar(0.96);
+    p.mesh.scale.multiplyScalar(0.95);
     if (p.life <= 0) {
       particleGroup.remove(p.mesh);
-      p.mesh.geometry = null;
       p.mesh.material.dispose();
-      activeParticles.splice(i, 1);
+      particles.splice(i, 1);
     }
   }
 }
 
-// ---------- INVENTORY ----------
+// ===================== INVENTORY =====================
 const inventory = {};
-Object.keys(BLOCK_CONFIG).forEach(k => { inventory[k] = 0; });
-[BLOCK_TYPES.GRASS, BLOCK_TYPES.DIRT, BLOCK_TYPES.STONE, BLOCK_TYPES.WOOD, BLOCK_TYPES.SAND, BLOCK_TYPES.GLOWSTONE, BLOCK_TYPES.PLANKS].forEach(t => {
-  inventory[t] = 48;
-});
+Object.keys(BLOCK_CONFIG).forEach(k => inventory[k] = 0);
+[BLOCK_TYPES.GRASS, BLOCK_TYPES.DIRT, BLOCK_TYPES.STONE, BLOCK_TYPES.WOOD, BLOCK_TYPES.SAND, BLOCK_TYPES.GLOWSTONE, BLOCK_TYPES.PLANKS].forEach(t => inventory[t] = 48);
 let activeSlotIndex = 0;
 let inventoryOpen = false;
 
@@ -648,14 +810,12 @@ function initUI() {
   updateCraftUI();
   showSelectedName();
 }
-
 function updateHotbarCounts() {
   HOTBAR_ITEMS.forEach((type, idx) => {
     const el = document.getElementById(`hotbar-count-${idx}`);
     if (el) el.innerText = inventory[type] || 0;
   });
 }
-
 function updateInventoryUI() {
   const grid = document.getElementById('inventory-grid');
   grid.innerHTML = '';
@@ -667,19 +827,14 @@ function updateInventoryUI() {
     slot.innerHTML = `<div class="hotbar-icon" style="background:#${hex};width:26px;height:26px;margin-bottom:3px"></div>
       <span style="font-size:10px">${BLOCK_CONFIG[type].name}</span>
       <span class="count">${inventory[type]||0}</span>`;
-    slot.onclick = () => {
-      // quick-add to hotbar if present
-      const hi = HOTBAR_ITEMS.indexOf(type);
-      if (hi >= 0) selectHotbarSlot(hi);
-    };
+    slot.onclick = () => { const hi = HOTBAR_ITEMS.indexOf(type); if (hi >= 0) selectHotbarSlot(hi); };
     grid.appendChild(slot);
   });
 }
-
 function updateCraftUI() {
   const panel = document.getElementById('tab-craft');
   panel.innerHTML = '';
-  CRAFT_RECIPES.forEach((r, i) => {
+  CRAFT_RECIPES.forEach(r => {
     const row = document.createElement('div');
     row.className = 'craft-row';
     const can = Object.entries(r.need).every(([t, n]) => (inventory[t] || 0) >= n);
@@ -690,17 +845,14 @@ function updateCraftUI() {
     btn.disabled = !can;
     btn.onclick = () => {
       if (!Object.entries(r.need).every(([t, n]) => (inventory[t] || 0) >= n)) return;
-      Object.entries(r.need).forEach(([t, n]) => { inventory[t] -= n; });
+      Object.entries(r.need).forEach(([t, n]) => inventory[t] -= n);
       inventory[r.out] = (inventory[r.out] || 0) + r.count;
-      updateHotbarCounts();
-      updateInventoryUI();
-      updateCraftUI();
+      updateHotbarCounts(); updateInventoryUI(); updateCraftUI();
     };
     row.appendChild(btn);
     panel.appendChild(row);
   });
 }
-
 document.querySelectorAll('.inv-tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.inv-tab').forEach(t => t.classList.remove('active'));
@@ -711,14 +863,12 @@ document.querySelectorAll('.inv-tab').forEach(tab => {
     if (name === 'craft') updateCraftUI();
   });
 });
-
 function selectHotbarSlot(idx) {
   if (idx < 0 || idx >= HOTBAR_ITEMS.length) return;
   activeSlotIndex = idx;
   document.querySelectorAll('.hotbar-slot').forEach((s, i) => s.classList.toggle('active', i === idx));
   showSelectedName();
 }
-
 function showSelectedName() {
   const el = document.getElementById('selected-name');
   const t = HOTBAR_ITEMS[activeSlotIndex];
@@ -727,28 +877,22 @@ function showSelectedName() {
   clearTimeout(showSelectedName._t);
   showSelectedName._t = setTimeout(() => { el.style.opacity = '0'; }, 1400);
 }
-
 function toggleInventory() {
   inventoryOpen = !inventoryOpen;
-  const modal = document.getElementById('inventory-modal');
-  modal.classList.toggle('open', inventoryOpen);
-  if (inventoryOpen) {
-    document.exitPointerLock();
-    updateInventoryUI();
-    updateCraftUI();
-  } else if (controlsEnabled) {
-    document.body.requestPointerLock();
-  }
+  document.getElementById('inventory-modal').classList.toggle('open', inventoryOpen);
+  if (inventoryOpen) { document.exitPointerLock(); updateInventoryUI(); updateCraftUI(); }
+  else if (controlsEnabled) document.body.requestPointerLock();
+}
+function updateHealthBar() {
+  document.getElementById('health-bar').style.width = (Math.max(0, player.health / player.maxHealth) * 100) + '%';
 }
 
-// ---------- MINING (hold to break) ----------
+// ===================== MINING / PLACING =====================
 const raycaster = new THREE.Raycaster();
-const _matrix = new THREE.Matrix4();
-const _center = new THREE.Vector3();
-const _dir = new THREE.Vector3();
-let miningTarget = null; // {x,y,z, type, progress}
+const _mat = new THREE.Matrix4();
+const _ctr = new THREE.Vector3();
 let isMining = false;
-let isPlacing = false;
+let miningTarget = null;
 
 function getLookHit() {
   raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
@@ -757,56 +901,50 @@ function getLookHit() {
     if (c.group) c.group.traverse(ch => { if (ch.isMesh) meshes.push(ch); });
   });
   const hits = raycaster.intersectObjects(meshes, false);
-  if (!hits.length || hits[0].distance > 7.5) return null;
+  if (!hits.length || hits[0].distance > 8) return null;
   const hit = hits[0];
   if (hit.instanceId === undefined) return null;
-  hit.object.getMatrixAt(hit.instanceId, _matrix);
-  _center.setFromMatrixPosition(_matrix);
-  return { hit, center: _center.clone(), distance: hit.distance, mesh: hit.object };
+  hit.object.getMatrixAt(hit.instanceId, _mat);
+  _ctr.setFromMatrixPosition(_mat);
+  const key = hit.object.userData.keys ? hit.object.userData.keys[hit.instanceId] : worldToBlockKey(_ctr);
+  return { hit, center: _ctr.clone(), key, distance: hit.distance };
 }
 
-window.addEventListener('mousedown', (e) => {
+window.addEventListener('mousedown', e => {
   if (!controlsEnabled || inventoryOpen) return;
   if (e.button === 0) isMining = true;
-  if (e.button === 2) {
-    isPlacing = true;
-    tryPlace();
-  }
+  if (e.button === 2) tryPlace();
 });
-window.addEventListener('mouseup', (e) => {
+window.addEventListener('mouseup', e => {
   if (e.button === 0) { isMining = false; resetMining(); }
-  if (e.button === 2) isPlacing = false;
 });
 window.addEventListener('contextmenu', e => e.preventDefault());
 
 function resetMining() {
   miningTarget = null;
-  const bar = document.getElementById('break-progress');
-  const fill = document.getElementById('break-progress-fill');
-  bar.style.opacity = '0';
-  fill.style.width = '0%';
+  document.getElementById('break-progress').style.opacity = '0';
+  document.getElementById('break-progress-fill').style.width = '0%';
 }
 
 function tryPlace() {
   const look = getLookHit();
-  if (!look) return;
-  _dir.copy(look.hit.point).sub(look.center).normalize();
-  const ax = Math.abs(_dir.x), ay = Math.abs(_dir.y), az = Math.abs(_dir.z);
-  let nx = 0, ny = 0, nz = 0;
-  if (ax >= ay && ax >= az) nx = Math.sign(_dir.x);
-  else if (ay >= az) ny = Math.sign(_dir.y);
-  else nz = Math.sign(_dir.z);
-  const placeX = Math.round(look.center.x + nx);
-  const placeY = Math.round(look.center.y + ny);
-  const placeZ = Math.round(look.center.z + nz);
-  const dx = placeX - player.position.x;
-  const dy = placeY - (player.position.y - 0.75);
-  const dz = placeZ - player.position.z;
-  if (Math.abs(dx) < 0.85 && Math.abs(dy) < 1.35 && Math.abs(dz) < 0.85) return;
-  if (isSolid(getBlockAt(placeX, placeY, placeZ))) return;
+  if (!look || !look.key) return;
+  // place outward along surface normal from hit
+  const parts = look.key.split(',').map(Number);
+  const face = parts[0], gu = parts[1], gv = parts[2], radial = parts[3];
+  const placeKey = blockKey(face, gu, gv, radial + 1);
+  // don't place inside player
+  const u = (gu + 0.5) / FACE_RES * 2 - 1;
+  const v = (gv + 0.5) / FACE_RES * 2 - 1;
+  const dir = faceUVToDir(face, u, v);
+  const placePos = radialToWorld(dir, radial + 1);
+  if (placePos.distanceTo(player.position) < 1.6) return;
+  if (isSolidType(getBlockAtWorld(placePos))) return;
+
   const activeType = HOTBAR_ITEMS[activeSlotIndex];
   if ((inventory[activeType] > 0 || player.flying) && activeType) {
-    setBlockAt(placeX, placeY, placeZ, activeType);
+    setBlockAtKey(placeKey, activeType);
+    spawnParticles(placePos, activeType, true);
     if (!player.flying) {
       inventory[activeType]--;
       updateHotbarCounts();
@@ -818,143 +956,182 @@ function tryPlace() {
 function updateMining(delta) {
   const bar = document.getElementById('break-progress');
   const fill = document.getElementById('break-progress-fill');
-  if (!isMining || player.flying) {
-    // creative: instant break
-    if (isMining && player.flying) {
-      const look = getLookHit();
-      if (look) setBlockAt(look.center.x, look.center.y, look.center.z, BLOCK_TYPES.AIR);
-      isMining = false;
-      resetMining();
+  if (!isMining) return;
+  if (player.flying) {
+    const look = getLookHit();
+    if (look && look.key) {
+      const t = getBlockAtWorld(look.center);
+      setBlockAtKey(look.key, BLOCK_TYPES.AIR);
+      if (t !== BLOCK_TYPES.AIR) spawnParticles(look.center, t, false);
     }
-    return;
-  }
-  const look = getLookHit();
-  if (!look) { resetMining(); return; }
-  const bx = Math.floor(look.center.x), by = Math.floor(look.center.y), bz = Math.floor(look.center.z);
-  const type = getBlockAt(bx, by, bz);
-  if (type === BLOCK_TYPES.AIR || type === BLOCK_TYPES.BEDROCK) { resetMining(); return; }
-  const conf = BLOCK_CONFIG[type];
-  const hardness = conf ? conf.hardness : 1;
-  if (hardness <= 0) { // liquids instant
-    setBlockAt(bx, by, bz, BLOCK_TYPES.AIR);
+    isMining = false;
     resetMining();
     return;
   }
-  if (!miningTarget || miningTarget.x !== bx || miningTarget.y !== by || miningTarget.z !== bz) {
-    miningTarget = { x: bx, y: by, z: bz, type, progress: 0 };
+  const look = getLookHit();
+  if (!look || !look.key) { resetMining(); return; }
+  const type = getBlockAtWorld(look.center);
+  if (type === BLOCK_TYPES.AIR || type === BLOCK_TYPES.BEDROCK) { resetMining(); return; }
+  const conf = BLOCK_CONFIG[type];
+  const hardness = conf ? conf.hardness : 1;
+  if (hardness <= 0) {
+    setBlockAtKey(look.key, BLOCK_TYPES.AIR);
+    spawnParticles(look.center, type, false);
+    resetMining();
+    return;
+  }
+  if (!miningTarget || miningTarget.key !== look.key) {
+    miningTarget = { key: look.key, progress: 0, type, center: look.center.clone() };
   }
   miningTarget.progress += delta / hardness;
   bar.style.opacity = '1';
   fill.style.width = `${Math.min(100, miningTarget.progress * 100)}%`;
   if (miningTarget.progress >= 1) {
-    setBlockAt(bx, by, bz, BLOCK_TYPES.AIR);
+    let give = type;
+    if (type === BLOCK_TYPES.STONE) give = BLOCK_TYPES.COBBLE;
+    if (!player.flying) {
+      inventory[give] = (inventory[give] || 0) + 1;
+      updateHotbarCounts();
+      updateInventoryUI();
+    }
+    setBlockAtKey(look.key, BLOCK_TYPES.AIR);
+    spawnParticles(miningTarget.center, type, false);
     resetMining();
   }
 }
 
-// ---------- PHYSICS ----------
+// ===================== PHYSICS (spherical gravity) =====================
 function updatePlayer(delta) {
+  const up = player.position.clone().normalize();
+  const r = player.position.length();
+
   if (player.flying) {
-    const speed = player.speed * (input.sprint ? 2.6 : 1.55);
-    const dir = new THREE.Vector3();
-    camera.getWorldDirection(dir);
-    const side = new THREE.Vector3(-dir.z, 0, dir.x).normalize();
+    const speed = player.speed * (input.sprint ? 2.5 : 1.5);
+    const { right, forward } = getLocalBasis(player.position);
+    const cos = Math.cos(yaw), sin = Math.sin(yaw);
+    const lookFwd = forward.clone().multiplyScalar(cos).add(right.clone().multiplyScalar(sin));
+    const lookRight = right.clone().multiplyScalar(cos).sub(forward.clone().multiplyScalar(sin));
     let move = new THREE.Vector3();
-    if (input.forward) move.add(dir);
-    if (input.backward) move.sub(dir);
-    if (input.right) move.add(side);
-    if (input.left) move.sub(side);
+    if (input.forward) move.add(lookFwd);
+    if (input.backward) move.sub(lookFwd);
+    if (input.right) move.add(lookRight);
+    if (input.left) move.sub(lookRight);
+    // radial from velocity (space / shift already applied in key handler partially)
+    move.addScaledVector(up, player.velocity.dot(up) > 0.1 ? 0 : 0);
     if (move.lengthSq() > 0) move.normalize();
     player.position.addScaledVector(move, speed * delta);
-    player.position.y += player.velocity.y * delta;
-    player.velocity.y *= 0.82;
-    camera.position.copy(player.position);
+    // residual radial velocity
+    const radialVel = player.velocity.dot(up);
+    player.position.addScaledVector(up, radialVel * delta);
+    player.velocity.multiplyScalar(0.85);
+    applyLook();
     return;
   }
 
-  // water check
-  const feetBlock = getBlockAt(player.position.x, player.position.y - 1.2, player.position.z);
-  const bodyBlock = getBlockAt(player.position.x, player.position.y - 0.4, player.position.z);
-  player.inWater = (BLOCK_CONFIG[feetBlock] && BLOCK_CONFIG[feetBlock].liquid) ||
-                   (BLOCK_CONFIG[bodyBlock] && BLOCK_CONFIG[bodyBlock].liquid);
+  // Gravity toward center
+  const g = 22;
+  player.velocity.addScaledVector(up, -g * delta);
 
-  const grav = player.inWater ? 6.0 : 24.5;
-  player.velocity.y -= grav * delta;
-  if (player.inWater) player.velocity.y = Math.max(player.velocity.y, -3.5);
+  // Water
+  const feet = player.position.clone().addScaledVector(up, -1.2);
+  const body = player.position.clone().addScaledVector(up, -0.3);
+  player.inWater = (BLOCK_CONFIG[getBlockAtWorld(feet)] && BLOCK_CONFIG[getBlockAtWorld(feet)].liquid) ||
+                   (BLOCK_CONFIG[getBlockAtWorld(body)] && BLOCK_CONFIG[getBlockAtWorld(body)].liquid);
+  if (player.inWater) {
+    // buoyancy + drag
+    player.velocity.addScaledVector(up, 14 * delta);
+    player.velocity.multiplyScalar(0.92);
+  }
 
-  const speed = player.speed * (input.sprint ? 1.55 : 1) * (player.inWater ? 0.55 : 1);
-  const dir = new THREE.Vector3();
-  camera.getWorldDirection(dir);
-  dir.y = 0;
-  if (dir.lengthSq() > 0) dir.normalize();
-  const side = new THREE.Vector3(-dir.z, 0, dir.x).normalize();
+  // Tangent movement
+  const speed = player.speed * (input.sprint ? 1.5 : 1) * (player.inWater ? 0.5 : 1);
+  const { right, forward } = getLocalBasis(player.position);
+  const cos = Math.cos(yaw), sin = Math.sin(yaw);
+  const lookFwd = forward.clone().multiplyScalar(cos).add(right.clone().multiplyScalar(sin));
+  const lookRight = right.clone().multiplyScalar(cos).sub(forward.clone().multiplyScalar(sin));
+  // project onto tangent plane
+  lookFwd.addScaledVector(up, -lookFwd.dot(up)).normalize();
+  lookRight.addScaledVector(up, -lookRight.dot(up)).normalize();
+
   let move = new THREE.Vector3();
-  if (input.forward) move.add(dir);
-  if (input.backward) move.sub(dir);
-  if (input.right) move.add(side);
-  if (input.left) move.sub(side);
+  if (input.forward) move.add(lookFwd);
+  if (input.backward) move.sub(lookFwd);
+  if (input.right) move.add(lookRight);
+  if (input.left) move.sub(lookRight);
   if (move.lengthSq() > 0) move.normalize();
-  player.velocity.x = move.x * speed;
-  player.velocity.z = move.z * speed;
 
-  const tryMove = (axis, amount) => {
-    player.position[axis] += amount;
-    const yLow = player.position.y - 1.35;
-    const yMid = player.position.y - 0.55;
-    const yHigh = player.position.y - 0.05;
-    const solid =
-      isSolid(getBlockAt(player.position.x, yLow, player.position.z)) ||
-      isSolid(getBlockAt(player.position.x, yMid, player.position.z)) ||
-      isSolid(getBlockAt(player.position.x, yHigh, player.position.z));
-    if (solid) {
-      player.position[axis] -= amount;
-      return false;
-    }
-    return true;
-  };
-  tryMove('x', player.velocity.x * delta);
-  tryMove('z', player.velocity.z * delta);
+  // Desired tangent velocity
+  const tangVel = move.multiplyScalar(speed);
+  // Keep existing radial velocity, replace tangent
+  const radialV = player.velocity.dot(up);
+  player.velocity.copy(up).multiplyScalar(radialV).add(tangVel);
 
-  const prevY = player.position.y;
-  player.position.y += player.velocity.y * delta;
+  // Integrate
+  const prevPos = player.position.clone();
+  player.position.addScaledVector(player.velocity, delta);
 
-  if (player.velocity.y < 0) {
-    if (isSolid(getBlockAt(player.position.x, player.position.y - 1.5, player.position.z))) {
-      const fallDist = prevY - player.position.y;
-      player.position.y = Math.floor(player.position.y - 1.5) + 1.5 + 0.48;
-      // fall damage
-      if (!player.inWater && fallDist > 0.35 && Math.abs(player.velocity.y) > 12) {
-        const dmg = Math.floor((Math.abs(player.velocity.y) - 11) * 0.45);
-        if (dmg > 0) {
-          player.health = Math.max(0, player.health - dmg);
-          updateHealthBar();
+  // Collision: sample along player capsule in radial + a few tangent offsets
+  const newUp = player.position.clone().normalize();
+  const checkOffsets = [
+    new THREE.Vector3(0, 0, 0),
+    lookRight.clone().multiplyScalar(0.3),
+    lookRight.clone().multiplyScalar(-0.3),
+    lookFwd.clone().multiplyScalar(0.3),
+    lookFwd.clone().multiplyScalar(-0.3)
+  ];
+
+  // Ground / shell collision
+  let grounded = false;
+  for (const off of checkOffsets) {
+    const sample = player.position.clone().add(off).addScaledVector(newUp, -1.45);
+    if (isSolidType(getBlockAtWorld(sample))) {
+      // push out to surface of that block roughly
+      const key = worldToBlockKey(sample);
+      if (key) {
+        const parts = key.split(',').map(Number);
+        const face = parts[0], gu = parts[1], gv = parts[2], radial = parts[3];
+        const u = (gu + 0.5) / FACE_RES * 2 - 1;
+        const v = (gv + 0.5) / FACE_RES * 2 - 1;
+        const bdir = faceUVToDir(face, u, v);
+        const blockOuter = radialToWorld(bdir, radial).addScaledVector(bdir, 0.5);
+        // set player so feet sit on block outer
+        const targetR = blockOuter.length() + 1.5;
+        player.position.copy(newUp).multiplyScalar(Math.max(targetR, PLANET_R - CRUST_DEPTH + 2));
+        // kill radial inward velocity
+        const rv = player.velocity.dot(newUp);
+        if (rv < 0) {
+          // fall damage
+          if (!player.inWater && rv < -13) {
+            const dmg = Math.floor((-rv - 12) * 0.5);
+            if (dmg > 0) {
+              player.health = Math.max(0, player.health - dmg);
+              updateHealthBar();
+            }
+          }
+          player.velocity.addScaledVector(newUp, -rv);
         }
+        grounded = true;
+        break;
       }
-      player.velocity.y = 0;
-      player.isGrounded = true;
-    } else {
-      player.isGrounded = false;
     }
-  } else if (player.velocity.y > 0) {
-    if (isSolid(getBlockAt(player.position.x, player.position.y + 0.12, player.position.z))) {
-      player.velocity.y = 0;
-    }
+  }
+  player.isGrounded = grounded;
+
+  // Ceiling (radial outward solid)
+  const head = player.position.clone().addScaledVector(newUp, 0.2);
+  if (isSolidType(getBlockAtWorld(head))) {
+    const rv = player.velocity.dot(newUp);
+    if (rv > 0) player.velocity.addScaledVector(newUp, -rv);
   }
 
-  // void / kill plane
-  if (player.position.y < -30) {
-    player.health = 0;
-    updateHealthBar();
-    respawn();
+  // Soft clamp: don't fall into the void core
+  if (player.position.length() < PLANET_R - CRUST_DEPTH - 2) {
+    player.position.setLength(PLANET_R - CRUST_DEPTH + 4);
+    player.velocity.set(0, 0, 0);
   }
+
   if (player.health <= 0) respawn();
-
-  camera.position.copy(player.position);
-}
-
-function updateHealthBar() {
-  const pct = Math.max(0, player.health / player.maxHealth) * 100;
-  document.getElementById('health-bar').style.width = pct + '%';
+  applyLook();
 }
 
 function respawn() {
@@ -963,94 +1140,91 @@ function respawn() {
   player.flying = false;
   document.getElementById('mode-display').innerText = 'Mode: Survival';
   updateHealthBar();
-  for (let y = 40; y >= 0; y--) {
-    if (isSolid(getBlockAt(0, y, 0))) {
-      player.position.set(0.5, y + 2.3, 0.5);
-      return;
-    }
-  }
-  player.position.set(0.5, 28, 0.5);
+  // spawn at +Y pole-ish with height
+  player.position.set(0, PLANET_R + CRUST_DEPTH + 6, 0);
+  yaw = 0; pitch = 0;
 }
 
-// ---------- TOUCH ----------
-(function setupTouch() {
+// Touch
+(function () {
   const jump = document.getElementById('btn-jump');
   const mine = document.getElementById('btn-mine');
   const place = document.getElementById('btn-place');
   const fly = document.getElementById('btn-fly');
-  jump.addEventListener('touchstart', e => { e.preventDefault(); input.jump = true;
-    if (player.flying) player.velocity.y = player.speed;
-    else if (player.isGrounded || player.inWater) { player.velocity.y = player.jumpForce * (player.inWater ? 0.55 : 1); player.isGrounded = false; }
+  jump.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (player.flying) {
+      const up = player.position.clone().normalize();
+      player.velocity.addScaledVector(up, player.speed);
+    } else if (player.isGrounded || player.inWater) {
+      const up = player.position.clone().normalize();
+      player.velocity.addScaledVector(up, player.jumpForce * (player.inWater ? 0.5 : 1));
+      player.isGrounded = false;
+    }
   });
-  jump.addEventListener('touchend', () => { input.jump = false; });
   mine.addEventListener('touchstart', e => { e.preventDefault(); isMining = true; });
   mine.addEventListener('touchend', () => { isMining = false; resetMining(); });
   place.addEventListener('touchstart', e => { e.preventDefault(); tryPlace(); });
   fly.addEventListener('touchstart', e => {
     e.preventDefault();
     player.flying = !player.flying;
-    player.velocity.set(0,0,0);
+    player.velocity.set(0, 0, 0);
     document.getElementById('mode-display').innerText = `Mode: ${player.flying ? 'Creative Fly' : 'Survival'}`;
   });
 })();
 
-// ---------- INIT ----------
+// ===================== INIT =====================
 function initWorld() {
-  const progressBar = document.getElementById('progress-bar');
-  const loadRadius = 3;
-  const total = (loadRadius * 2 + 1) ** 2;
-  let loaded = 0;
-  for (let x = -loadRadius; x <= loadRadius; x++) {
-    for (let z = -loadRadius; z <= loadRadius; z++) {
-      const cKey = getChunkKey(x, z);
-      const data = generateChunkData(x, z);
-      const group = buildChunkMesh(data);
-      scene.add(group);
-      activeChunks.set(cKey, { group, data, cx: x, cz: z });
-      loaded++;
-      progressBar.style.width = `${(loaded / total) * 100}%`;
-    }
-  }
-  respawn();
-  camera.position.copy(player.position);
+  const bar = document.getElementById('progress-bar');
+  // Start near +Y
+  player.position.set(0.1, PLANET_R + CRUST_DEPTH + 5, 0.1);
+  // Load initial chunks
+  updateChunksAroundPlayer(player.position);
+  bar.style.width = '100%';
   initUI();
   updateHealthBar();
+  applyLook();
   setTimeout(() => {
     const ls = document.getElementById('loading-screen');
     ls.style.opacity = '0';
-    setTimeout(() => ls.remove(), 450);
-  }, 350);
+    setTimeout(() => ls.remove(), 400);
+  }, 300);
 }
 initWorld();
 
-// ---------- LOOP ----------
+// ===================== LOOP =====================
 const clock = new THREE.Clock();
-let frameCount = 0, lastTime = performance.now(), fps = 60;
+let frameCount = 0, lastTime = performance.now();
 
 function animate() {
   requestAnimationFrame(animate);
-  const delta = Math.min(clock.getDelta(), 0.1);
+  const delta = Math.min(clock.getDelta(), 0.08);
+
   if (controlsEnabled) {
     updatePlayer(delta);
-    updateChunksAroundPlayer(player.position.x, player.position.z);
+    updateChunksAroundPlayer(player.position);
     updateMining(delta);
+  } else {
+    applyLook();
   }
-  updateLighting(delta);
-  updateParticles(delta);
+
+  const up = player.position.clone().normalize();
+  updateLighting(delta, player.position);
+  updateParticles(delta, up);
   renderer.render(scene, camera);
 
   frameCount++;
   const now = performance.now();
   if (now - lastTime >= 1000) {
-    fps = Math.round((frameCount * 1000) / (now - lastTime));
-    document.getElementById('fps-counter').innerText = `FPS: ${fps}`;
+    document.getElementById('fps-counter').innerText = `FPS: ${Math.round(frameCount * 1000 / (now - lastTime))}`;
     frameCount = 0;
     lastTime = now;
   }
-  document.getElementById('coords-display').innerText =
-    `XYZ: ${Math.floor(player.position.x)}, ${Math.floor(player.position.y)}, ${Math.floor(player.position.z)}`;
-  const biome = getBiome(player.position.x, player.position.z);
-  document.getElementById('biome-display').innerText = `Biome: ${biome.charAt(0).toUpperCase() + biome.slice(1)}`;
+  const { lat, lon } = dirToLatLon(up);
+  document.getElementById('coords-display').innerText = `Lat/Lon: ${lat.toFixed(1)}°, ${lon.toFixed(1)}°`;
+  const alt = player.position.length() - PLANET_R;
+  document.getElementById('alt-display').innerText = `Altitude: ${alt.toFixed(1)}`;
+  document.getElementById('biome-display').innerText = `Biome: ${getBiome(up).replace(/^\w/, c => c.toUpperCase())}`;
 }
 animate();
 
